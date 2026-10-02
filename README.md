@@ -69,6 +69,14 @@ Force'` restricts every table to it. Rules live in `COMMANDS` in `tracker/config
 Descriptions in USAspending are one-line contract titles, so expect a large
 Uncategorized bucket. The MDA SHIELD IDIQ alone contributes ~2,400 identical awards.
 
+## Scheduled runs
+
+`.github/workflows/watch.yml` runs the pipeline every Monday (and on demand from the
+Actions tab). The database is carried between runs in the Actions cache, so each run's
+job summary page shows the diff since the previous week plus the full and Space Force
+summaries, and the database is attached as an artifact. Add a `SAM_API_KEY` repository
+secret to include SAM.gov opportunities. `ci.yml` runs the tests on every push.
+
 ## Optional sources
 
 - SBIR.gov award abstracts: `python pipeline.py run --source sbir` (set

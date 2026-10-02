@@ -1,0 +1,43 @@
+name: watch
+# Weekly incremental run. The database persists between runs via the Actions cache,
+# so each run's diff shows what changed since the last one. Also runs on demand.
+on:
+  schedule:
+    - cron: "17 11 * * 1"   # Mondays 11:17 UTC
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Restore database from previous run
+        uses: actions/cache/restore@v4
+        with:
+          path: space_contracts.db
+          key: space-contracts-db-${{ github.run_id }}
+          restore-keys: space-contracts-db-
+      - name: Run pipeline
+        env:
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
+        run: |
+          python pipeline.py run
+          if [ -n "$SAM_API_KEY" ]; then python pipeline.py run --source sam || true; fi
+      - name: Write diff and summary to the job page
+        run: |
+          { echo '## Changes since last run'; echo '```'; python pipeline.py diff; echo '```';
+            echo '## Summary'; echo '```'; python pipeline.py summary --top 10; echo '```';
+            echo '## Space Force'; echo '```'; python pipeline.py summary --command "Space Force" --top 10; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Save database for next run
+        uses: actions/cache/save@v4
+        with:
+          path: space_contracts.db
+          key: space-contracts-db-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: space_contracts.db
+          path: space_contracts.db
+          retention-days: 90
