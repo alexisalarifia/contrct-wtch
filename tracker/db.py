@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS awards (
     pop_state       TEXT,
     category        TEXT,
     lane            TEXT,
+    command         TEXT,
     source          TEXT DEFAULT 'usaspending',
     first_seen      TEXT,
     last_seen       TEXT
@@ -60,12 +61,13 @@ INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_awards_category ON awards(category);
 CREATE INDEX IF NOT EXISTS idx_awards_amount ON awards(amount);
 CREATE INDEX IF NOT EXISTS idx_awards_office ON awards(office_code);
+CREATE INDEX IF NOT EXISTS idx_awards_command ON awards(command);
 """
 
 AWARD_COLS = [
     "award_key", "award_id", "recipient_name", "uei", "recipient_id", "agency", "sub_agency",
     "office_code", "office_name", "award_type", "amount", "start_date", "end_date", "last_modified",
-    "description", "naics", "naics_desc", "psc", "psc_desc", "pop_state", "category", "lane", "source",
+    "description", "naics", "naics_desc", "psc", "psc_desc", "pop_state", "category", "lane", "command", "source",
 ]
 
 
@@ -76,6 +78,8 @@ def now():
 def connect(path=None):
     conn = sqlite3.connect(path or config.DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     conn.executescript(SCHEMA)
     _migrate(conn)
     conn.executescript(INDEXES)

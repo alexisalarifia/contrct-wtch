@@ -11,8 +11,9 @@ categories and a funding lane, and reports what changed between runs.
 ```
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-python pipeline.py run          # first run: FY26 baseline, ~3 min, ~9k awards
-python pipeline.py summary      # tags, lanes, programs, top awards, recipients, offices
+python pipeline.py run          # first run: FY26 baseline, ~20 s, ~9k awards (WORKERS=6 concurrent requests)
+python pipeline.py summary      # commands, tags, lanes, programs, top awards, recipients, offices
+python pipeline.py summary --command "Space Force"   # SSC, SDA, Space RCO and other Space Force offices only
 python pipeline.py run          # later: only awards modified since the last run
 python pipeline.py diff         # new awards and amount changes since the previous run
 python pipeline.py retag        # re-apply edited taxonomy to stored awards, no network
@@ -45,6 +46,14 @@ what `diff` reads.
 
 Subawards for the top 50 primes land in `subawards` (`INCLUDE_SUBAWARDS=0` to skip).
 Grants (NASA, AFOSR) with `INCLUDE_GRANTS=1`.
+
+## Space Force
+
+USAspending has no Space Force sub-agency; its awards sit under the Department of the Air
+Force. The tracker derives a `command` column from the contracting office (FA88xx = Space
+Systems Command, HQ0850 = Space Development Agency, FA25xx = Space Force bases and Space
+RCO, plus AFRL, AFNWC, AFTC/AEDC, AFLCMC, NASA, MDA, DARPA). `summary --command 'Space
+Force'` restricts every table to it. Rules live in `COMMANDS` in `tracker/config.py`.
 
 ## Tagging
 

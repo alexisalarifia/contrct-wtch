@@ -1,6 +1,7 @@
 """USAspending v2 client: backoff, paging, award search, award detail, subawards."""
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -54,11 +55,29 @@ def time_period(start, end, date_type=None):
     return [tp]
 
 
-def search_awards(filters, fields=None, sort="Award Amount", max_pages=None):
+def _parallel_pages(payload, n_pages):
+    """Fetch pages 1..n concurrently. Order of results is not guaranteed; callers dedupe by key."""
+    def one(page):
+        return _request("POST", SEARCH, json={**payload, "page": page}).get("results", [])
+    with ThreadPoolExecutor(max_workers=config.WORKERS) as pool:
+        for results in pool.map(one, range(1, n_pages + 1)):
+            yield from results
+
+
+def search_awards(filters, fields=None, sort="Award Amount", max_pages=None, total=None):
+    """Awards for `filters`. With a known total (see count_awards) pages are fetched in parallel."""
     fields = list(fields or config.AWARD_FIELDS)
     if sort not in fields:
         fields.append(sort)
     payload = {"filters": filters, "fields": fields, "limit": config.PAGE_SIZE, "sort": sort, "order": "desc"}
+    max_pages = max_pages or config.MAX_PAGES
+    if total is None:
+        total = count_awards(filters)
+    if total is not None and total >= 0:
+        n_pages = min(max_pages, -(-total // config.PAGE_SIZE))
+        if n_pages > max_pages:
+            log.warning("MAX_PAGES=%d caps %d pages", max_pages, n_pages)
+        return _parallel_pages(payload, n_pages)
     return _paged(payload, max_pages)
 
 

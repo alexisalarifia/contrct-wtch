@@ -3,6 +3,7 @@ import re
 
 from . import config
 
+_COMMANDS = [(n, re.compile(rx, re.I)) for n, rx in config.COMMANDS]
 _COMPILED = [(tag, [re.compile(p, re.I) for p in pats]) for tag, pats in config.TAXONOMY]
 
 
@@ -39,3 +40,11 @@ def lane_for(award):
         if naics in rule.get("naics", ()) or (psc and psc.startswith(rule.get("psc", ("\0",)))):
             return name
     return "Other"
+
+
+def command_for(award):
+    hay = " ".join(str(award.get(k) or "") for k in ("office_code", "office_name", "award_id", "sub_agency"))
+    for name, rx in _COMMANDS:
+        if rx.search(hay):
+            return name
+    return award.get("sub_agency") or "Other"

@@ -13,31 +13,42 @@ def _table(rows, headers, widths):
     return "\n".join(out)
 
 
-def summary(conn, top=5):
+def summary(conn, top=5, command=None):
+    """command: optional substring filter on the command column, e.g. 'Space Force'."""
     parts = []
+    where = ""
+    args = ()
+    if command:
+        where = " WHERE a.command LIKE ?"
+        args = (f"%{command}%",)
+        parts.append(f"Filter: command LIKE '%{command}%'")
+    rows = conn.execute("SELECT a.command, COUNT(*), SUM(a.amount) FROM awards a" + where + " GROUP BY 1 ORDER BY SUM(a.amount) DESC", args).fetchall()
+    parts.append("Awards per command / organization")
+    parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Command", "Count", "Total $"], [44, 7, 22]))
+
     rows = conn.execute(
-        "SELECT t.tag, COUNT(*), SUM(a.amount) FROM award_tags t JOIN awards a USING (award_key) "
-        "GROUP BY t.tag ORDER BY COUNT(*) DESC"
+        "SELECT t.tag, COUNT(*), SUM(a.amount) FROM award_tags t JOIN awards a USING (award_key)" + where +
+        " GROUP BY t.tag ORDER BY COUNT(*) DESC", args
     ).fetchall()
     parts.append("Awards per tag (multi-label; an award can appear under several)")
     parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Tag", "Count", "Total $"], [38, 7, 22]))
 
-    rows = conn.execute("SELECT category, COUNT(*), SUM(amount) FROM awards GROUP BY category ORDER BY COUNT(*) DESC").fetchall()
+    rows = conn.execute("SELECT category, COUNT(*), SUM(amount) FROM awards a" + where + " GROUP BY category ORDER BY COUNT(*) DESC", args).fetchall()
     parts.append("\nAwards per primary category")
     parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Category", "Count", "Total $"], [38, 7, 22]))
 
-    rows = conn.execute("SELECT lane, COUNT(*), SUM(amount) FROM awards GROUP BY lane ORDER BY COUNT(*) DESC").fetchall()
+    rows = conn.execute("SELECT lane, COUNT(*), SUM(amount) FROM awards a" + where + " GROUP BY lane ORDER BY COUNT(*) DESC", args).fetchall()
     parts.append("\nAwards per funding lane (from NAICS/PSC codes)")
     parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Lane", "Count", "Total $"], [44, 7, 22]))
 
     rows = conn.execute(
-        "SELECT substr(description,1,70), COUNT(*), SUM(amount), MIN(sub_agency) FROM awards GROUP BY 1 HAVING COUNT(*) > 3 ORDER BY COUNT(*) DESC LIMIT ?", (top * 2,)
+        "SELECT substr(description,1,70), COUNT(*), SUM(amount), MIN(sub_agency) FROM awards a" + where + " GROUP BY 1 HAVING COUNT(*) > 3 ORDER BY COUNT(*) DESC LIMIT ?", (*args, top * 2)
     ).fetchall()
     parts.append(f"\nTop {top * 2} programs (identical descriptions, >3 awards)")
     parts.append(_table([(f"{r[0]} [{(r[3] or '')[:4]}]", r[1], _money(r[2])) for r in rows], ["Program", "Awards", "Total $"], [60, 8, 22]))
 
     rows = conn.execute(
-        "SELECT award_id, recipient_name, amount, category, office_name, substr(description,1,80) FROM awards ORDER BY amount DESC LIMIT ?", (top,)
+        "SELECT award_id, recipient_name, amount, category, office_name, substr(description,1,80) FROM awards a" + where + " ORDER BY amount DESC LIMIT ?", (*args, top)
     ).fetchall()
     parts.append(f"\nTop {top} highest-value awards")
     for r in rows:
@@ -45,13 +56,13 @@ def summary(conn, top=5):
         parts.append(f"    office: {r[4] or '?'}\n    {r[5]}")
 
     rows = conn.execute(
-        "SELECT recipient_name, COUNT(*), SUM(amount) FROM awards GROUP BY recipient_name ORDER BY SUM(amount) DESC LIMIT ?", (top * 2,)
+        "SELECT recipient_name, COUNT(*), SUM(amount) FROM awards a" + where + " GROUP BY recipient_name ORDER BY SUM(amount) DESC LIMIT ?", (*args, top * 2)
     ).fetchall()
     parts.append(f"\nTop {top * 2} recipients by obligated $")
     parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Recipient", "Awards", "Total $"], [40, 8, 22]))
 
     rows = conn.execute(
-        "SELECT COALESCE(office_name, sub_agency, '?'), COUNT(*), SUM(amount) FROM awards GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT ?", (top * 2,)
+        "SELECT COALESCE(office_name, sub_agency, '?'), COUNT(*), SUM(amount) FROM awards a" + where + " GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT ?", (*args, top * 2)
     ).fetchall()
     parts.append(f"\nTop {top * 2} awarding offices")
     parts.append(_table([(r[0], r[1], _money(r[2])) for r in rows], ["Office", "Awards", "Total $"], [44, 8, 22]))

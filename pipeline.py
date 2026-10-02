@@ -2,7 +2,7 @@
 """contrct-wtch: space & defense contract tracker over USAspending (+ optional SBIR.gov, SAM.gov).
 
   python pipeline.py run [--source usaspending,sbir,sam]   fetch, tag, upsert, snapshot, verify
-  python pipeline.py summary [--top N]                      tag counts, top awards, recipients, offices
+  python pipeline.py summary [--top N] [--command 'Space Force']   commands, tags, lanes, top awards
   python pipeline.py diff [--run ID --prev ID]              what changed since the previous run
   python pipeline.py retag                                  re-apply taxonomy/lanes to stored awards (offline)
 """
@@ -21,6 +21,7 @@ def main(argv=None):
     r.add_argument("--source", default="usaspending", help="comma-separated: usaspending,sbir,sam")
     s = sub.add_parser("summary")
     s.add_argument("--top", type=int, default=5)
+    s.add_argument("--command", help="filter to a command, e.g. 'Space Force'")
     d = sub.add_parser("diff")
     d.add_argument("--run", type=int)
     d.add_argument("--prev", type=int)
@@ -35,7 +36,7 @@ def main(argv=None):
         return runner.retag()
     conn = db.connect()
     if args.cmd == "summary":
-        print(report.summary(conn, top=args.top))
+        print(report.summary(conn, top=args.top, command=args.command))
     elif args.cmd == "diff":
         print(report.diff(conn, args.run, args.prev))
     conn.close()

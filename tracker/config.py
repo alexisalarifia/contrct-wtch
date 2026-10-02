@@ -7,6 +7,7 @@ API_BASE = "https://api.usaspending.gov/api/v2"
 PAGE_SIZE = 100
 MAX_PAGES = int(os.environ.get("MAX_PAGES", "120"))
 MAX_RETRIES = 5
+WORKERS = int(os.environ.get("WORKERS", "6"))   # concurrent API requests (pages + office lookups)
 TIMEOUT = 60
 KEEP_ALL = os.environ.get("KEEP_ALL", "0") == "1"           # keep awards that fail the office allowlist
 INCLUDE_GRANTS = os.environ.get("INCLUDE_GRANTS", "0") == "1"
@@ -95,6 +96,23 @@ LANES = [
     ("Other R&D services (PSC A*)", {"psc": ("A",)}),
     ("Engineering & technical support (PSC R4)", {"psc": ("R4",)}),
     ("Physical sciences R&D (NAICS 541715)", {"naics": ("541715",)}),
+]
+
+# Command/organization derived from office code + name + sub agency. First match wins.
+# USAspending has no Space Force subtier, so this is how Space Force gets broken out.
+COMMANDS = [
+    ("Space Force / SDA", r"\bHQ0850|SPACE DEV|\bSDA\b"),
+    ("Space Force / SSC", r"\bFA88\d\d|\bSSC\b|SPACE SYSTEMS"),
+    ("Space Force / Space RCO", r"SPC RCO|SPACE RCO|RAPID CAP"),
+    ("Space Force / other", r"\bFA25\d\d|USSF|SPOC|SPACE FORCE|SPACE LAUNCH DELTA|\bSLD\b"),
+    ("AFRL / AFWERX / SBIR", r"AFRL|AFWERX|SPACEWERX|SBIR|\bFA86(49|50)|\bFA8750|\bFA94(5\d|51|53)"),
+    ("AFOSR", r"AFOSR|\bFA9550"),
+    ("AFNWC (nuclear/ICBM)", r"AFNWC|ICBM|\bFA82(19|99)"),
+    ("AFTC / AEDC (test)", r"AFTC|AEDC|ARNOLD|\bFA93\d\d|\bFA91\d\d"),
+    ("AFLCMC", r"AFLCMC|\bFA8[567]\d\d"),
+    ("MDA", r"MISSILE DEF|\bMDA\b|\bHQ0147"),
+    ("DARPA", r"DARPA|ADVANCED RESEARCH PROJECTS|\bHR00"),
+    ("NASA", r"NASA|NATIONAL AERONAUTICS|^80|^NN|^NAS"),
 ]
 
 # Generic tags are matched on the award description only, never on NAICS/PSC text,
