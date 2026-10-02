@@ -37,7 +37,7 @@ def test_upsert_snapshot_and_diff(tmp_path):
     out = report.diff(conn)
     assert "New awards: 0" in out and "Amount changes: 1" in out and "A1" in out and "+20" in out
     assert "Satellite" in report.summary(conn)
-    assert db.last_successful_run(conn)["run_id"] == r2
+    assert db.last_successful_run(conn)["run_id"] == r4
 
 
 def test_migrate_v1_schema(tmp_path):
