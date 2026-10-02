@@ -5,6 +5,7 @@
   python pipeline.py summary [--top N] [--command 'Space Force']   commands, tags, lanes, top awards
   python pipeline.py diff [--run ID --prev ID]              what changed since the previous run
   python pipeline.py retag                                  re-apply taxonomy/lanes to stored awards (offline)
+  python pipeline.py report [--out report.html]             self-contained HTML dashboard, open in a browser
 """
 import argparse
 import logging
@@ -26,6 +27,9 @@ def main(argv=None):
     d.add_argument("--run", type=int)
     d.add_argument("--prev", type=int)
     sub.add_parser("retag")
+    h = sub.add_parser("report")
+    h.add_argument("--out", default="report.html")
+    h.add_argument("--top", type=int, default=25)
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -39,6 +43,10 @@ def main(argv=None):
         print(report.summary(conn, top=args.top, command=args.command))
     elif args.cmd == "diff":
         print(report.diff(conn, args.run, args.prev))
+    elif args.cmd == "report":
+        from tracker import html
+        path, data = html.render(conn, args.out, args.top)
+        print(f"wrote {path}: {data['totals']['awards']} awards, {len(data['new'])} new, {len(data['changed'])} changed")
     conn.close()
     return 0
 

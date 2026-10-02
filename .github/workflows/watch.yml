@@ -26,6 +26,7 @@ jobs:
         run: |
           python pipeline.py run
           if [ -n "$SAM_API_KEY" ]; then python pipeline.py run --source sam || true; fi
+      - run: python pipeline.py report --out report.html
       - name: Write diff and summary to the job page
         run: |
           { echo '## Changes since last run'; echo '```'; python pipeline.py diff; echo '```';
@@ -40,4 +41,9 @@ jobs:
         with:
           name: space_contracts.db
           path: space_contracts.db
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report.html
+          path: report.html
           retention-days: 90

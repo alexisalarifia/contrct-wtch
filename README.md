@@ -17,7 +17,13 @@ python pipeline.py summary --command "Space Force"   # SSC, SDA, Space RCO and o
 python pipeline.py run          # later: only awards modified since the last run
 python pipeline.py diff         # new awards and amount changes since the previous run
 python pipeline.py retag        # re-apply edited taxonomy to stored awards, no network
+python pipeline.py report       # writes report.html; open it in any browser
 ```
+
+`report.html` is a single self-contained file: tiles, obligated dollars by command and
+by capability tag, what changed since the previous run, a searchable award table with
+command filters, top recipients and programs. Nothing is hosted; share the file if you
+want someone else to see it.
 
 Database: `space_contracts.db` (override with `DB_PATH`). No external tools needed;
 `sqlite3` is optional.
@@ -74,7 +80,7 @@ Uncategorized bucket. The MDA SHIELD IDIQ alone contributes ~2,400 identical awa
 `.github/workflows/watch.yml` runs the pipeline every Monday (and on demand from the
 Actions tab). The database is carried between runs in the Actions cache, so each run's
 job summary page shows the diff since the previous week plus the full and Space Force
-summaries, and the database is attached as an artifact. Add a `SAM_API_KEY` repository
+summaries, and the database and `report.html` are attached as artifacts. Add a `SAM_API_KEY` repository
 secret to include SAM.gov opportunities. `ci.yml` runs the tests on every push.
 
 ## Optional sources
@@ -96,7 +102,8 @@ override `tracker/config.py`. Main ones: `DB_PATH`, `MAX_PAGES` (100 awards per 
 ## Layout
 
 ```
-pipeline.py            CLI: run | summary | diff | retag
+pipeline.py            CLI: run | summary | diff | retag | report
+tracker/html.py        report.html generator (template in tracker/templates/)
 tracker/config.py      agencies, codes, allowlist, taxonomy, lanes
 tracker/usaspending.py API client: backoff, paging, counts, award detail, subawards
 tracker/db.py          schema + v1 migration, upsert, snapshots, office cache
