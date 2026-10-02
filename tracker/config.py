@@ -101,7 +101,7 @@ LANES = [
 # Command/organization derived from office code + name + sub agency. First match wins.
 # USAspending has no Space Force subtier, so this is how Space Force gets broken out.
 COMMANDS = [
-    ("Space Force / SDA", r"\bHQ0850|SPACE DEV|\bSDA\b"),
+    ("Space Force / SDA", r"\bHQ0850|SPACE DEV(ELOPMENT)? AGENCY|\bFA2401"),   # not "SDA AND COMBAT POWER", that is SSC
     ("Space Force / SSC", r"\bFA88\d\d|\bSSC\b|SPACE SYSTEMS"),
     ("Space Force / Space RCO", r"SPC RCO|SPACE RCO|RAPID CAP"),
     ("Space Force / other", r"\bFA25\d\d|USSF|SPOC|SPACE FORCE|SPACE LAUNCH DELTA|\bSLD\b"),

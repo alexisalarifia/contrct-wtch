@@ -48,6 +48,8 @@ def test_command_breakout():
     assert taxonomy.command_for({"award_id": "HQ085126FE029", "office_name": "MISSILE DEFENSE AGENCY (MDA)"}) == "MDA"
     assert taxonomy.command_for({"award_id": "HQ085026C0001", "office_name": None, "sub_agency": "Department of the Air Force"}) == "Space Force / SDA"
     assert taxonomy.command_for({"award_id": "FA251826F0001", "office_name": "FA2518 USSF SPOC/SAIO"}) == "Space Force / other"
+    assert taxonomy.command_for({"award_id": "FA880926C0001", "office_name": "FA8809 SDA AND CMBT PWR SSC/SZK-IK"}) == "Space Force / SSC"
+    assert taxonomy.command_for({"award_id": "FA240126F0001", "office_name": "FA2401 SPACE DEVELOPMENT AGENCY SDA"}) == "Space Force / SDA"
     assert taxonomy.command_for({"award_id": "FA865026C0001", "office_name": "FA2385 USAF AFMC AFRL PZL AFRL RSKD"}) == "AFRL / AFWERX / SBIR"
     assert taxonomy.command_for({"award_id": "80NSSC26K0001", "office_name": None, "sub_agency": "National Aeronautics and Space Administration"}) == "NASA"
     assert taxonomy.command_for({"award_id": "FA860926FB002", "office_name": "FA8609 AFLCMC WLCK KC46", "sub_agency": "Department of the Air Force"}) == "AFLCMC"
